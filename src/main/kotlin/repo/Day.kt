@@ -1,36 +1,44 @@
 package repo.day
 
+import collection
 import model.Day
 import model.Occurrence
 import model.Quality
+import mongoConnection
 import org.bson.Document
 import org.bson.types.ObjectId
 import repo.*
 import java.util.*
 
-class DayRepo(private val dayMapper: MongoObjectMapper<Day>) : MongoRepo<Day, ObjectId>() {
+class DayRepo(private val dayMapper: MongoObjectMapper<Day>) : Repo<Day, ObjectId> {
 
     override fun get(id: ObjectId): Day? =
-        letClient {
-            val days = getDatabase("mood-tracker-test").getCollection("day")
+        mongoConnection {
+            val day = database("mood-tracker-test") {
+                collection("day") {
+                    val filter = Document()
+                    filter["_id"] = id
 
-            val filter = Document()
-            filter["_id"] = id
+                    find(filter).first()
+                }
+            }
 
-            return@letClient days.find(filter).first()?.let { this@DayRepo.dayMapper.map(it) }
+            return@mongoConnection day?.let { this@DayRepo.dayMapper.map(it) }
         }
 
     fun delete(obj: Day): Boolean = delete(obj.id)
     override fun delete(id: ObjectId): Boolean =
-        letClient {
-            val days = getDatabase("mood-tracker-test").getCollection("day")
+        mongoConnection {
+            val deleteResult = database("mood-tracker-test") {
+                collection("day") {
+                    val filter = Document()
+                    filter["_id"] = id
 
-            val filter = Document()
-            filter["id"] = id
+                    deleteOne(filter)
+                }
+            }
 
-            val deleteResult = days.deleteOne(filter)
-
-            return@letClient deleteResult.deletedCount > 0
+            return@mongoConnection deleteResult.deletedCount > 0
         }
 
     override fun update(id: ObjectId, newValue: Day): Day {
@@ -38,24 +46,36 @@ class DayRepo(private val dayMapper: MongoObjectMapper<Day>) : MongoRepo<Day, Ob
     }
 
     override fun create(value: Map<String, Any>): Day =
-        letClient {
-            val days = getDatabase("mood-tracker-test").getCollection("day")
+        mongoConnection {
+            val doc = database("mood-tracker-test"){
+                collection("day") {
+                    val doc = Document(value)
 
-            val doc = Document(value)
+                    val insertOneResult = insertOne(doc)
 
-            val insertOneResult = days.insertOne(doc)
+                    val id = insertOneResult.insertedId?.asObjectId()?.value ?: throw Exception("Not able to create days.")
 
-            doc["_id"] = insertOneResult.insertedId?.asObjectId()
+                    doc["_id"] = id
 
-            return@letClient this@DayRepo.dayMapper.map(doc)
+                    doc
+                }
+            }
+
+            return@mongoConnection this@DayRepo.dayMapper.map(doc)
         }
 
     override fun all(): List<Day> =
-        letClient {
-            val days = getDatabase("mood-tracker-test").getCollection("day")
-
-            return@letClient days.find().into(mutableListOf()).map(this@DayRepo.dayMapper::map)
+        mongoConnection {
+            database("mood-tracker-test"){
+                collection("day") {
+                    find().into(mutableListOf()).map(this@DayRepo.dayMapper::map)
+                }
+            }
         }
+
+    override fun contains(id: ObjectId): Boolean {
+        return this[id] != null
+    }
 
 }
 
@@ -73,7 +93,7 @@ class DayMapper : MongoObjectMapper<Day> {
             mapOf(
                 "date" to obj.date.time,
                 "occurrences" to obj.occurrences.map { it.text },
-                "quality" to obj.quality
+                "quality" to obj.quality.toString()
             )
         )
 }

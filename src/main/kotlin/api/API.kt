@@ -6,6 +6,7 @@ import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
 import model.Day
 import model.Quality
+import model.serializers.ObjectIdSerializer
 import org.bson.types.ObjectId
 import repo.Repo
 
@@ -49,7 +50,23 @@ fun Route.dayRoute(dayRepo: Repo<Day, ObjectId>) {
         }
 
         delete("{id?}") {
+            val hexString = call.parameters["id"]
 
+            if (ObjectId.isValid(hexString)) {
+                val id = ObjectId(hexString)
+
+                if (id !in dayRepo) {
+                    call.respond(HttpStatusCode.NotFound)
+                    return@delete
+                }
+
+                val status = dayRepo.delete(id)
+                @Serializable data class DeleteResponse(@Serializable(ObjectIdSerializer::class) val id: ObjectId, val deleted: Boolean)
+
+                call.respond(HttpStatusCode.OK, DeleteResponse(id, status))
+            } else {
+                call.respond(HttpStatusCode.BadRequest)
+            }
         }
     }
 }
