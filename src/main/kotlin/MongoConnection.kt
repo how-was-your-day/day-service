@@ -1,3 +1,4 @@
+
 import com.mongodb.ConnectionString
 import com.mongodb.MongoClientSettings
 import com.mongodb.MongoException
@@ -7,7 +8,10 @@ import com.mongodb.client.MongoCollection
 import com.mongodb.client.MongoDatabase
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
+import dao.DayCodec
+import dao.DayCreateCodec
 import org.bson.Document
+import org.bson.codecs.configuration.CodecRegistries
 import org.bson.codecs.configuration.CodecRegistries.fromProviders
 import org.bson.codecs.configuration.CodecRegistries.fromRegistries
 import org.bson.codecs.configuration.CodecRegistry
@@ -35,6 +39,7 @@ class MongoConnection {
                     fromProviders(PojoCodecProvider.builder().automatic(true).build())
 
                 val codecRegistry: CodecRegistry = fromRegistries(
+                    CodecRegistries.fromCodecs(DayCodec(), DayCreateCodec()),
                     MongoClientSettings.getDefaultCodecRegistry(),
                     pojoCodecRegistry
                 )
