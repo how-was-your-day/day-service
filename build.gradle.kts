@@ -5,6 +5,7 @@ val kotlin_version : String by project
 val logback_version : String by project
 val mongo_version : String by project
 val coroutines_version : String by project
+val kafkaVersion : String by project
 
 plugins {
     kotlin("jvm") version "1.7.20"
@@ -22,6 +23,7 @@ repositories {
 dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines_version")
 
+    implementation("org.apache.kafka:kafka-clients:$kafkaVersion")
     implementation("io.ktor:ktor:$ktor_version")
     implementation("io.ktor:ktor-io:$ktor_version")
     implementation("io.ktor:ktor-server:$ktor_version")
