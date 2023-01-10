@@ -1,3 +1,3 @@
 
-rootProject.name = "mood-tracker"
+rootProject.name = "mood-tracker-day-service"
 
