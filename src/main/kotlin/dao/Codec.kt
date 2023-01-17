@@ -3,6 +3,7 @@ package dao
 import model.Day
 import model.Occurrence
 import model.Quality
+import model.User
 import org.bson.BsonReader
 import org.bson.BsonWriter
 import org.bson.codecs.Codec
@@ -15,7 +16,7 @@ class DayCodec : Codec<Day> {
         writer.writeStartDocument()
 
         writer.writeObjectId("_id", value.id)
-        writer.writeObjectId("user", value.user)
+        writer.writeObjectId("user", value.user.id)
         writer.writeDateTime("date", value.date.time)
         writer.writeStartArray("occurrences")
         writer.writeInt32(value.occurrences.size)
@@ -32,7 +33,7 @@ class DayCodec : Codec<Day> {
     override fun decode(reader: BsonReader, decoderContext: DecoderContext): Day {
         reader.readStartDocument()
         val id = reader.readObjectId("_id")
-        val user = reader.readObjectId("user")
+        val user = User(reader.readObjectId("user"))
         val date = Date(reader.readDateTime("date"))
         reader.readStartArray()
         val occurrences = List(reader.readInt32()) {
@@ -54,7 +55,7 @@ class DayCreateCodec : Codec<DayCreate> {
     override fun encode(writer: BsonWriter, value: DayCreate, encoderContext: EncoderContext) {
         writer.writeStartDocument()
 
-        writer.writeObjectId("user", value.user)
+        writer.writeObjectId("user", value.user.id)
         writer.writeDateTime("date", value.date.time)
         writer.writeStartArray("occurrences")
         writer.writeInt32(value.occurrences.size)
@@ -71,7 +72,7 @@ class DayCreateCodec : Codec<DayCreate> {
     override fun decode(reader: BsonReader, decoderContext: DecoderContext): DayCreate {
         reader.readStartDocument()
 
-        val user = reader.readObjectId("user")
+        val user = User(reader.readObjectId("user"))
         val date = Date(reader.readDateTime("date"))
         reader.readStartArray()
         val occurrences = List(reader.readInt32()) {

@@ -4,6 +4,7 @@ import com.mongodb.client.MongoCollection
 import model.Day
 import model.Occurrence
 import model.Quality
+import model.User
 import mongoConnection
 import org.bson.Document
 import org.bson.types.ObjectId
@@ -11,7 +12,7 @@ import java.util.*
 
 data class DayCreate(
     val date: Date,
-    val user: ObjectId,
+    val user: User,
     val occurrences: List<Occurrence>,
     val quality: Quality
 )

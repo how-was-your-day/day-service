@@ -15,6 +15,7 @@ import io.ktor.util.*
 import kotlinx.serialization.Serializable
 import model.Occurrence
 import model.Quality
+import model.User
 import model.serializers.ObjectIdSerializer
 import org.bson.types.ObjectId
 import repo.DayRepo
@@ -67,7 +68,7 @@ fun Route.dayRoute(dayRepo: DayRepo) {
                     with(day) {
                         DayCreate(
                             Date(date),
-                            ObjectId(user),
+                            User(user),
                             occurrences.map { Occurrence(it) },
                             quality
                         )
@@ -83,7 +84,6 @@ fun Route.dayRoute(dayRepo: DayRepo) {
         delete("{id?}") {
             val hexString = call.parameters["id"]
 
-            if (ObjectId.isValid(hexString)) {
                 val id = ObjectId(hexString)
 
                 if (id !in dayRepo) {

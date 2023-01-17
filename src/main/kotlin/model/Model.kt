@@ -10,10 +10,17 @@ import java.util.*
 data class Day(
     @Serializable(ObjectIdSerializer::class) val id: ObjectId,
     @Serializable(DateSerializer::class) val date: Date,
-    @Serializable(ObjectIdSerializer::class) val user: ObjectId,
+    val user: User,
     val occurrences: List<Occurrence>,
     val quality: Quality
     )
+
+@Serializable
+data class User(
+    @Serializable(ObjectIdSerializer::class) val id: ObjectId,
+) {
+    constructor(id: String) : this(ObjectId(id))
+}
 
 @Serializable
 enum class Quality {
