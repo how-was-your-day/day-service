@@ -14,6 +14,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.util.*
 import kotlinx.serialization.Serializable
+import model.Day
 import model.Occurrence
 import model.Quality
 import model.User
@@ -23,8 +24,12 @@ import org.bson.types.ObjectId
 import repo.DayRepo
 import java.util.*
 
+
 @Serializable
 data class DayCreationDTO(val date: Long, val user: String, val occurrences: List<String>, val quality: Quality)
+@Serializable data class DayUpdateDTO(val id: String, val date: Long, val user: String, val occurrences: List<String>, val quality: Quality) {
+    fun toDay() : Day = Day(ObjectId(id), Date(date), User(user), occurrences.map { Occurrence(it) }, quality)
+}
 
 fun Route.dayRoute(dayRepo: DayRepo, dayProducer: DayProducer) {
     route("/day") {
@@ -92,6 +97,35 @@ fun Route.dayRoute(dayRepo: DayRepo, dayProducer: DayProducer) {
                 when (val day = dayRepo[id]) {
                     null -> call.respond(HttpStatusCode.NotFound)
                     else -> call.respond(HttpStatusCode.OK, day)
+                }
+            }
+
+            put {
+                val hexString = call.parameters["id"]
+
+                if (ObjectId.isValid(hexString)) {
+                    val id = ObjectId(hexString)
+
+                    if (id !in dayRepo) {
+                        call.respond(HttpStatusCode.NotFound)
+                        return@put
+                    }
+
+                    val newDay = call.receive<DayUpdateDTO>()
+
+                    dayRepo.update(id, newDay.toDay()).onSuccess {
+                        call.respond(HttpStatusCode.OK, it)
+                    }.onFailure {
+                        if (it.message == null) {
+                            call.respond(HttpStatusCode.InternalServerError)
+                        } else {
+                            call.respondText(it.message!!, status = HttpStatusCode.InternalServerError)
+                        }
+
+                    }
+
+                } else {
+                    call.respondText("$hexString is not a valid ID", status = HttpStatusCode.BadRequest)
                 }
             }
 

@@ -18,9 +18,7 @@ class DayRepoImpl(private val dayDAO: DayDAO) : DayRepo {
     fun delete(obj: Day): Boolean = delete(obj.id)
     override fun delete(id: ObjectId): Boolean = dayDAO.delete(id)
 
-    override fun update(id: ObjectId, newValue: Day): Day {
-        TODO("Not yet implemented")
-    }
+    override fun update(id: ObjectId, newValue: Day): Result<Day> = dayDAO.update(newValue)
 
     override fun create(value: DayCreate): Day = dayDAO.create(value)
 

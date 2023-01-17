@@ -6,15 +6,17 @@ import kotlin.reflect.full.declaredMemberProperties
 
 interface DAO <T, TCreate, TFilter, ID> {
     fun create(tc: TCreate) : T
-
     fun read(id: ID) : T?
     fun all() : List<T>
     fun findOne(filter: TFilter) : T?
     fun findMany(filter: TFilter) : List<T>
-
-    fun update(t: T) : T
-
+    fun update(t: T) : Result<T>
     fun delete(id: ID) : Boolean
+}
+
+class DAOException : Exception {
+    constructor() : super()
+    constructor(message: String) : super(message)
 }
 
 fun Any.toDocument() : Document {

@@ -1,6 +1,7 @@
 package dao
 
 import com.mongodb.client.MongoCollection
+import com.mongodb.client.model.ReplaceOptions
 import model.Day
 import model.Occurrence
 import model.Quality
@@ -55,8 +56,18 @@ class DayDAO : DAO<Day, DayCreate, Document, ObjectId> {
         return@useDayCollection deleteResult.deletedCount > 0
     }
 
-    override fun update(t: Day): Day {
-        TODO("Not yet implemented")
+    override fun update(t: Day): Result<Day> = useDayCollection {
+        val filter = documentOf("_id" to t.id)
+
+        /**
+         * In the future need to add a transaction style operation so that if the matched is more than 1 the replacement is rolled back
+         */
+        val updateResult = replaceOne(filter, t, ReplaceOptions().upsert(false))
+
+        return@useDayCollection if (updateResult.matchedCount > 0)
+            Result.success(t)
+        else
+            Result.failure(DAOException("Unable to update day ${t.id}"))
     }
 
     override fun findMany(filter: Document): List<Day> = useDayCollection {
