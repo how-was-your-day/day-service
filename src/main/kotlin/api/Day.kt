@@ -1,5 +1,6 @@
 package api.v1.day
 
+import DayProducer
 import api.ErrorBody
 import api.firstOf
 import api.rootCause
@@ -17,6 +18,7 @@ import model.Occurrence
 import model.Quality
 import model.User
 import model.serializers.ObjectIdSerializer
+import org.apache.kafka.clients.producer.ProducerRecord
 import org.bson.types.ObjectId
 import repo.DayRepo
 import java.util.*
@@ -24,7 +26,7 @@ import java.util.*
 @Serializable
 data class DayCreationDTO(val date: Long, val user: String, val occurrences: List<String>, val quality: Quality)
 
-fun Route.dayRoute(dayRepo: DayRepo) {
+fun Route.dayRoute(dayRepo: DayRepo, dayProducer: DayProducer) {
     route("/day") {
         get {
             val userId = call.request.queryParameters.firstOf("u", "user")
@@ -76,6 +78,12 @@ fun Route.dayRoute(dayRepo: DayRepo) {
                 )
 
                 call.respond(HttpStatusCode.Created, createdDay)
+
+                dayProducer.send(
+                    ProducerRecord("day", createdDay.user to createdDay.date, createdDay)
+                )
+
+                dayProducer.close()
             } catch (ex: BadRequestException) {
                 call.respond(HttpStatusCode.BadRequest, ErrorBody("Bad Request", ex.rootCause().message))
             }

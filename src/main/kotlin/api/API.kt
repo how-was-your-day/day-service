@@ -1,5 +1,6 @@
 package api
 
+import DayProducer
 import api.v1.day.dayRoute
 import dao.DayDAO
 import io.ktor.http.*
@@ -23,7 +24,7 @@ fun Application.configureRouting() {
             allowCredentials = true
         }
 
-        dayRoute(DayRepoImpl(DayDAO()))
+        dayRoute(DayRepoImpl(DayDAO()), DayProducer())
     }
 }
 
