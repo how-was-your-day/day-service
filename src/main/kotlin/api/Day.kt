@@ -28,6 +28,11 @@ data class DayCreationDTO(val date: Long, val user: String, val occurrences: Lis
 
 fun Route.dayRoute(dayRepo: DayRepo, dayProducer: DayProducer) {
     route("/day") {
+        options {
+            call.response.headers.append("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+            call.respond(HttpStatusCode.NoContent)
+        }
+
         get {
             val userId = call.request.queryParameters.firstOf("u", "user")
 
@@ -43,23 +48,6 @@ fun Route.dayRoute(dayRepo: DayRepo, dayProducer: DayProducer) {
             }
         }
 
-        get("{id?}") {
-            val hexString = call.parameters["id"]
-
-            sanitizePayload(call.parameters, "/day/{id}: id must be a 12-byte hex string") { ObjectId.isValid(this["id"]) }
-
-            val id = ObjectId(hexString)
-
-            when (val day = dayRepo[id]) {
-                null -> call.respond(HttpStatusCode.NotFound)
-                else -> call.respond(HttpStatusCode.OK, day)
-            }
-        }
-
-        options {
-            call.response.headers.append("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
-            call.respond(HttpStatusCode.NoContent)
-        }
         post {
             try {
                 val day = call.receive<DayCreationDTO>()
@@ -89,24 +77,45 @@ fun Route.dayRoute(dayRepo: DayRepo, dayProducer: DayProducer) {
             }
         }
 
-        delete("{id?}") {
-            val hexString = call.parameters["id"]
+        route("{id?}") {
+            options {
+                call.response.headers.append("Access-Control-Allow-Methods", "GET, OPTIONS, PUT, DELETE")
+                call.respond(HttpStatusCode.NoContent)
+            }
+            get {
+                val hexString = call.parameters["id"]
+
+                sanitizePayload(call.parameters, "/day/{id}: id must be a 12-byte hex string") { ObjectId.isValid(this["id"]) }
 
                 val id = ObjectId(hexString)
 
-                if (id !in dayRepo) {
-                    call.respond(HttpStatusCode.NotFound)
-                    return@delete
+                when (val day = dayRepo[id]) {
+                    null -> call.respond(HttpStatusCode.NotFound)
+                    else -> call.respond(HttpStatusCode.OK, day)
                 }
+            }
 
-                val status = dayRepo.delete(id)
-                @Serializable
-                data class DeleteResponse(@Serializable(ObjectIdSerializer::class) val id: ObjectId, val deleted: Boolean)
+            delete {
+                val hexString = call.parameters["id"]
 
-                call.respond(HttpStatusCode.OK, DeleteResponse(id, status))
-            } else {
-                call.respond(HttpStatusCode.BadRequest)
+                if (ObjectId.isValid(hexString)) {
+                    val id = ObjectId(hexString)
+
+                    if (id !in dayRepo) {
+                        call.respond(HttpStatusCode.NotFound)
+                        return@delete
+                    }
+
+                    val status = dayRepo.delete(id)
+                    @Serializable
+                    data class DeleteResponse(@Serializable(ObjectIdSerializer::class) val id: ObjectId, val deleted: Boolean)
+
+                    call.respond(HttpStatusCode.OK, DeleteResponse(id, status))
+                } else {
+                    call.respond(HttpStatusCode.BadRequest)
+                }
             }
         }
+
     }
 }
