@@ -17,6 +17,8 @@ fun Application.configureRouting() {
         install(CORS) {
             anyHost()
             allowMethod(HttpMethod.Post)
+            allowMethod(HttpMethod.Put)
+            allowMethod(HttpMethod.Patch)
             allowMethod(HttpMethod.Options)
             allowHeader(HttpHeaders.Accept)
             allowHeader(HttpHeaders.ContentType)
