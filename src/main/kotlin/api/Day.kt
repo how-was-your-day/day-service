@@ -30,6 +30,16 @@ data class DayCreationDTO(val date: Long, val user: String, val occurrences: Lis
 @Serializable data class DayUpdateDTO(val id: String, val date: Long, val user: String, val occurrences: List<String>, val quality: Quality) {
     fun toDay() : Day = Day(ObjectId(id), Date(date), User(user), occurrences.map { Occurrence(it) }, quality)
 }
+@Serializable data class DayDTO(val id: String, val user: String, val date: Long, val occurrences: List<String>, val quality: Quality) {
+    constructor(day: Day) : this(day.id.toHexString(), day.user.id.toHexString(), day.date.time, day.occurrences.map { it.text }, day.quality)
+}
+
+private suspend fun ApplicationCall.respond(statusCode: HttpStatusCode, day: Day) {
+    respond(statusCode, DayDTO(day))
+}
+private suspend fun ApplicationCall.respond(statusCode: HttpStatusCode, days: List<Day>) {
+    respond(statusCode, List(days.size) { DayDTO(days[it]) })
+}
 
 fun Route.dayRoute(dayRepo: DayRepo, dayProducer: DayProducer) {
     route("/day") {
